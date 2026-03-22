@@ -4,6 +4,7 @@ from app.repositories.task_repository import TaskRepository
 from app.repositories.project_repository import ProjectRepository
 from app.schemas.task import TaskCreate, TaskUpdate, TaskResponse
 from app.services.activity_service import ActivityService
+from app.services.ai_service import AIService
 
 
 class TaskService:
@@ -90,3 +91,34 @@ class TaskService:
                 detail="Task not found",
             )
         return task
+    
+    async def generate_ai_tasks(self, project_id: str, owner_id: str) -> list[TaskResponse]:
+        project = await self._verify_project_owner(project_id, owner_id)
+
+        ai_service = AIService()
+        generated_tasks = await ai_service.generate_tasks(
+            project_name=project.name,
+            project_description=project.description,
+        )
+
+        created_tasks = []
+        for task_data in generated_tasks:
+            task = await self.task_repo.create(
+                project_id=project_id,
+                data={
+                    "title": task_data["title"],
+                    "description": task_data.get("description"),
+                    "priority": task_data.get("priority", "medium"),
+                },
+            )
+            await self.activity.log(
+                user_id=owner_id,
+                project_id=project_id,
+                entity_type="task",
+                entity_id=task.id,
+                action="ai_generated",
+                extra_data={"title": task.title},
+            )
+            created_tasks.append(TaskResponse.model_validate(task))
+        
+        return created_tasks
