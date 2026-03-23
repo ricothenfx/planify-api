@@ -5,6 +5,7 @@ from app.repositories.project_repository import ProjectRepository
 from app.schemas.task import TaskCreate, TaskUpdate, TaskResponse
 from app.services.activity_service import ActivityService
 from app.services.ai_service import AIService
+from app.core.websocket_manager import ws_manager
 
 
 class TaskService:
@@ -24,6 +25,15 @@ class TaskService:
             entity_id=task.id,
             action="created",
             extra_data={"title": task.title},
+        )
+        await ws_manager.broadcast_to_project(
+            project_id=project_id,
+            message={
+                "type": "task_created",
+                "task_id": task.id,
+                "title": task.title,
+                "by_user": owner_id,
+            }
         )
         return TaskResponse.model_validate(task)
     
@@ -54,6 +64,16 @@ class TaskService:
             action="updated",
             extra_data=extra,
         )
+        await ws_manager.broadcast_to_project(
+            project_id=project_id,
+            message={
+                "type": "task_updated",
+                "task_id": task.id,
+                "title": task.title,
+                "changes": update_data,
+                "by_user": owner_id,
+            }
+        )
         return TaskResponse.model_validate(task)
     
     async def delete(self, project_id: str, task_id: str, owner_id: str) -> None:
@@ -66,6 +86,15 @@ class TaskService:
             entity_id=task.id,
             action="deleted",
             extra_data={"title": task.title},
+        )
+        await ws_manager.broadcast_to_project(
+            project_id=project_id,
+            message={
+                "type": "task_deleted",
+                "task_id": task.id,
+                "title": task.title,
+                "by_user": owner_id,
+            }
         )
         await self.task_repo.delete(task)
     
@@ -121,4 +150,12 @@ class TaskService:
             )
             created_tasks.append(TaskResponse.model_validate(task))
         
+        await ws_manager.broadcast_to_project(
+            project_id=project_id,
+            message={
+                "type": "ai_tasks_generated",
+                "count": len(created_tasks),
+                "by_user": owner_id,
+            }
+        )        
         return created_tasks

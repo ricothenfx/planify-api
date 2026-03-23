@@ -1,15 +1,12 @@
 import json
-import google.generativeai as genai
+from google import genai
 from app.core.config import settings
 
 
-genai.configure(api_key=settings.GEMINI_API_KEY)
+client = genai.Client(api_key=settings.GEMINI_API_KEY)
 
 
 class AIService:
-    def __init__(self):
-        self.model = genai.GenerativeModel(settings.GEMINI_MODEL)
-    
     async def generate_tasks(
         self,
         project_name: str,
@@ -42,7 +39,10 @@ class AIService:
             }}
             ]
             """
-        response = await self.model.generate_content_async(prompt)
+        response = await client.aio.models.generate_content(
+            model=settings.GEMINI_MODEL,
+            contents=prompt,
+        )
         text = response.text.strip()
 
         # Clean response if markdown code blocks exists
