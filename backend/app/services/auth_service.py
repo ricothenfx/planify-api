@@ -1,8 +1,14 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import HTTPException, status
+from jose import JWTError
 from app.repositories.user_repository import UserRepository
-from app.schemas.auth import LoginRequest, TokenResponse
-from app.core.security import verify_password, create_access_token
+from app.schemas.auth import LoginRequest, TokenResponse, RefreshTokenRequest
+from app.core.security import (
+    verify_password,
+    create_access_token,
+    create_refresh_token,
+    decode_access_token,
+)
 
 
 class AuthService:
@@ -28,5 +34,39 @@ class AuthService:
             )
         
         access_token = create_access_token(data={"sub": str(user.id)})
+        refresh_token = create_refresh_token(data={"sub": str(user.id)})
 
-        return TokenResponse(access_token=access_token)
+        return TokenResponse(
+            access_token=access_token,
+            refresh_token=refresh_token,
+        )
+    
+    async def refresh(self, data: RefreshTokenRequest) -> TokenResponse:
+        credentials_exception = HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid or expired refresh token",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+        try:
+            payload = decode_access_token(data.refresh_token)
+            user_id: str = payload.get("sub")
+            token_type: str = payload.get("type")
+
+            if user_id is None or token_type != "refresh":
+                raise credentials_exception
+        
+        except JWTError:
+            raise credentials_exception
+        
+        user = await self.repo.get_by_id(user_id=user_id)
+        if not user or not user.is_active:
+            raise credentials_exception
+        
+        access_token = create_access_token(data={"sub": str(user.id)})
+        refresh_token = create_refresh_token(data={"sub": str(user.id)})
+
+        return TokenResponse(
+            access_token=access_token,
+            refresh_token=refresh_token,
+        )
