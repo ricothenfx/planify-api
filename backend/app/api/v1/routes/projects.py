@@ -1,9 +1,10 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.database import get_db
 from app.core.dependencies import get_current_user
 from app.models.user import User
 from app.schemas.project import ProjectCreate, ProjectUpdate, ProjectResponse
+from app.schemas.pagination import PaginatedResponse
 from app.services.project_service import ProjectService
 
 
@@ -23,13 +24,25 @@ async def create_project(
     return await service.create(data=data, owner_id=current_user.id)
 
 
-@router.get("", response_model=list[ProjectResponse])
+@router.get("", response_model=PaginatedResponse[ProjectResponse])
 async def get_projects(
+    page: int = Query(default=1, ge=1),
+    limit: int = Query(default=10, ge=1, le=100),
+    search: str | None = Query(default=None),
+    sort: str = Query(default="created_at"),
+    order: str = Query(default="desc", pattern="^(asc|desc)$"),
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
     service = ProjectService(db)
-    return await service.get_all(owner_id=current_user.id)
+    return await service.get_all(
+        owner_id=current_user.id,
+        page=page,
+        limit=limit,
+        search=search,
+        sort=sort,
+        order=order,
+    )
 
 
 @router.get("/{project_id}", response_model=ProjectResponse)

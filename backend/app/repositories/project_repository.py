@@ -1,6 +1,7 @@
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
+from sqlalchemy import select, func
 from app.models.project import Project
+
 
 class ProjectRepository:
     def __init__(self, db: AsyncSession):
@@ -10,9 +11,42 @@ class ProjectRepository:
         result = await self.db.execute(select(Project).where(Project.id == project_id))
         return result.scalar_one_or_none()
     
-    async def get_all_by_owner(self, owner_id: str) -> list[Project]:
-        result = await self.db.execute(select(Project).where(Project.owner_id == owner_id))
-        return list(result.scalars().all())
+    async def get_all_by_owner(
+        self,
+        owner_id: str,
+        page: int = 1,
+        limit: int = 10,
+        search: str | None = None,
+        sort: str = "created_at",
+        order: str = "desc",
+    ) -> tuple[list[Project], int]:
+        query = select(Project).where(Project.owner_id == owner_id)
+        
+        # Search by name
+        if search:
+            query = query.where(Project.name.ilike(f"%{search}%"))
+            
+        # Count total
+        count_query = select(func.count()).select_from(query.subquery())
+        total_result = await self.db.execute(count_query)
+        total = total_result.scalar()
+
+        # Sort
+        allowed_sort = {"created_at", "updated_at", "name"}
+        if sort not in allowed_sort:
+            sort = "created_at"
+        sort_column = getattr(Project, sort)
+        if order == "desc":
+            query = query.order_by(sort_column.desc())
+        else:
+            query = query.order_by(sort_column.asc())
+        
+        # Paginate
+        offset = (page - 1) * limit
+        query = query.offset(offset).limit(limit)
+
+        result = await self.db.execute(query)
+        return list(result.scalars().all()), total
     
     async def create(self, name: str, description: str | None, owner_id: str) -> Project:
         project = Project(

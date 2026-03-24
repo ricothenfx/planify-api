@@ -3,9 +3,11 @@ from fastapi import HTTPException, status
 from app.repositories.task_repository import TaskRepository
 from app.repositories.project_repository import ProjectRepository
 from app.schemas.task import TaskCreate, TaskUpdate, TaskResponse
+from app.schemas.pagination import PaginatedResponse
 from app.services.activity_service import ActivityService
 from app.services.ai_service import AIService
 from app.core.websocket_manager import ws_manager
+from app.models.task import TaskStatus, TaskPriority
 
 
 class TaskService:
@@ -37,10 +39,35 @@ class TaskService:
         )
         return TaskResponse.model_validate(task)
     
-    async def get_all(self, project_id: str, owner_id: str) -> list[TaskResponse]:
+    async def get_all(
+        self,
+        project_id: str,
+        owner_id: str,
+        page: int = 1,
+        limit: int = 10,
+        status: TaskStatus | None = None,
+        priority: TaskPriority | None = None,
+        assignee_id: str | None = None,
+        sort: str = "created_at",
+        order: str = "desc",
+    ):
         await self._verify_project_owner(project_id, owner_id)
-        tasks = await self.task_repo.get_all_by_project(project_id)
-        return [TaskResponse.model_validate(t) for t in tasks]
+        tasks, total = await self.task_repo.get_all_by_project(
+            project_id=project_id,
+            page=page,
+            limit=limit,
+            status=status,
+            priority=priority,
+            assignee_id=assignee_id,
+            sort=sort,
+            order=order,
+        )
+        return PaginatedResponse.create(
+            items=[TaskResponse.model_validate(t) for t in tasks],
+            total=total,
+            page=page,
+            limit=limit,
+        )
     
     async def get_by_id(self, project_id: str, task_id: str, owner_id: str) -> TaskResponse:
         await self._verify_project_owner(project_id, owner_id)

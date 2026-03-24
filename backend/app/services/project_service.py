@@ -2,6 +2,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import HTTPException, status
 from app.repositories.project_repository import ProjectRepository
 from app.schemas.project import ProjectCreate, ProjectResponse, ProjectUpdate
+from app.schemas.pagination import PaginatedResponse
 from app.services.activity_service import ActivityService
 
 
@@ -26,9 +27,29 @@ class ProjectService:
         )
         return ProjectResponse.model_validate(project)
     
-    async def get_all(self, owner_id: str) -> list[ProjectResponse]:
-        projects = await self.repo.get_all_by_owner(owner_id)
-        return [ProjectResponse.model_validate(p) for p in projects]
+    async def get_all(
+        self,
+        owner_id: str,
+        page: int = 1,
+        limit: int = 10,
+        search: str | None = None,
+        sort: str = "created_at",
+        order: str = "desc",
+    ):
+        projects, total = await self.repo.get_all_by_owner(
+            owner_id=owner_id,
+            page=page,
+            limit=limit,
+            search=search,
+            sort=sort,
+            order=order,
+        )
+        return PaginatedResponse.create(
+            items=[ProjectResponse.model_validate(p) for p in projects],
+            total=total,
+            page=page,
+            limit=limit,
+        )
     
     async def get_by_id(self, project_id: str, owner_id: str) -> ProjectResponse:
         project = await self._get_and_verify_owner(project_id, owner_id)
