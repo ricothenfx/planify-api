@@ -9,3 +9,9 @@ class GenerateTasksRequest(BaseModel):
 class GenerateTasksResponse(BaseModel):
     generated: int
     tasks: list[TaskResponse]
+
+
+class TaskSuggestionsResponse(BaseModel):
+    task_id: str
+    status: str
+    suggestions: list[str]

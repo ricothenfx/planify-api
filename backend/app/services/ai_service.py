@@ -54,3 +54,38 @@ class AIService:
 
         tasks = json.loads(text)
         return tasks
+    
+    async def suggest_next_actions(
+        self,
+        task_title: str,
+        task_description: str | None,
+        new_status: str,
+        project_name: str,
+    ) -> list[str]:
+        prompt = f"""
+    You are a project management assistant. A task status has been updated.
+
+    Project: {project_name}
+    Task: {task_title}
+    Description: {task_description or "No description"}
+    New Status: {new_status}
+
+    Give 2-3 short, actionable suggestions for what the team should do next.
+    Be specific and practical.
+
+    Respond ONLY with a valid JSON array of strings. No explanation, no markdown.
+    Example: ["suggestion 1", "suggestion 2", "suggestion 3"]
+    """
+        response = await client.aio.models.generate_content(
+            model=settings.GEMINI_MODEL,
+            contents=prompt,
+        )
+        text = response.text.strip()
+
+        if text.startswith("```"):
+            text = text.split("```")[1]
+            if text.startswith("json"):
+                text = text[4:]
+        text = text.strip()
+
+        return json.loads(text)

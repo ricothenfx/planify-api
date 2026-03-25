@@ -74,8 +74,8 @@ class TaskService:
         task = await self._get_task_in_project(task_id, project_id)
         return TaskResponse.model_validate(task)
     
-    async def update(self, project_id: str, task_id: str, data: TaskUpdate, owner_id: str) -> TaskResponse:
-        await self._verify_project_owner(project_id, owner_id)
+    async def update(self, project_id: str, task_id: str, data: TaskUpdate, owner_id: str) -> dict:
+        project = await self._verify_project_owner(project_id, owner_id)
         task = await self._get_task_in_project(task_id, project_id)
         old_status = task.status
         update_data = data.model_dump(exclude_none=True)
@@ -101,7 +101,25 @@ class TaskService:
                 "by_user": owner_id,
             }
         )
-        return TaskResponse.model_validate(task)
+
+        # Generate AI suggestions if status changed
+        suggestions = []
+        if "status" in update_data:
+            try:
+                ai_service = AIService()
+                suggestions = await ai_service.suggest_next_actions(
+                    task_title=task.title,
+                    task_description=task.description,
+                    new_status=task.status.value,
+                    project_name=project.name,
+                )
+            except Exception:
+                suggestions = []
+        
+        return {
+            "task": TaskResponse.model_validate(task),
+            "suggestions": suggestions,
+        }
     
     async def delete(self, project_id: str, task_id: str, owner_id: str) -> None:
         await self._verify_project_owner(project_id, owner_id)

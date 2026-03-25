@@ -32,3 +32,8 @@ class TaskResponse(TaskBase):
     updated_at: datetime
 
     model_config = {"from_attributes": True}
+
+
+class TaskUpdateResponse(BaseModel):
+    task: TaskResponse
+    suggestions: list[str] = []

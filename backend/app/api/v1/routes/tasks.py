@@ -6,7 +6,7 @@ from app.core.database import get_db
 from app.core.dependencies import get_current_user
 from app.models.user import User
 from app.models.task import TaskStatus, TaskPriority
-from app.schemas.task import TaskCreate, TaskUpdate, TaskResponse
+from app.schemas.task import TaskCreate, TaskUpdate, TaskResponse, TaskUpdateResponse
 from app.schemas.pagination import PaginatedResponse
 from app.services.task_service import TaskService
 
@@ -66,7 +66,7 @@ async def get_task(
     return await service.get_by_id(project_id=project_id, task_id=task_id, owner_id=current_user.id)
 
 
-@router.patch("/{task_id}", response_model=TaskResponse)
+@router.patch("/{task_id}", response_model=TaskUpdateResponse)
 async def update_task(
     project_id: str,
     task_id: str,
