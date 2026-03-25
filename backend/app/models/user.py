@@ -36,3 +36,6 @@ class User(Base):
     task_comments: Mapped[list["TaskComment"]] = relationship(
         "TaskComment", back_populates="user"
     )
+    task_attachments: Mapped[list["TaskAttachment"]] = relationship(
+        "TaskAttachment", back_populates="user"
+    )

@@ -20,6 +20,11 @@ class Settings(BaseSettings):
     GEMINI_API_KEY: str = ""
     GEMINI_MODEL: str = "gemini-2.5-flash"
 
+    # CLOUDINARY
+    CLOUDINARY_CLOUD_NAME: str = "REDACTED"
+    CLOUDINARY_API_KEY: str = "REDACTED"
+    CLOUDINARY_API_SECRET: str = "REDACTED"
+
     class Config:
         env_file = ".env"
 

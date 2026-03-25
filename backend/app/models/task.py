@@ -66,3 +66,6 @@ class Task(Base):
     comments: Mapped[list["TaskComment"]] = relationship(
         "TaskComment", back_populates="task", cascade="all, delete-orphan"
     )
+    attachments: Mapped[list["TaskAttachment"]] = relationship(
+        "TaskAttachment", back_populates="task", cascade="all, delete-orphan"
+    )
