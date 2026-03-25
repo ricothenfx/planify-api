@@ -12,7 +12,10 @@ from app.core.exceptions import (
     validation_exception_handler,
     generic_exception_handler,
 )
+from app.core.database import AsyncSessionLocal
 from app.api.v1.api import api_router
+from sqlalchemy import text
+import time
 
 
 setup_logging()
@@ -135,9 +138,43 @@ async def root():
 
 @app.get("/health", tags=["Health"])
 async def health_check():
-    return {
-        "success": True,
-        "data": {
-            "status": "ok"
-        }
+    start = time.time()
+    health = {
+        "status": "healthy",
+        "version": settings.APP_VERSION,
+        "checks": {},
     }
+
+    # Check database
+    try:
+        async with AsyncSessionLocal() as session:
+            await session.execute(text("SELECT 1"))
+        health["checks"]["database"] = {
+            "status": "healthy",
+            "latency_ms": round((time.time() - start) * 1000, 2),
+        }
+    except Exception as e:
+        health["checks"]["database"] = {
+            "status": "unhealthy",
+            "error": str(e),
+        }
+        health["status"] = "unhealthy"
+
+    # Check AI service
+    try:
+        from app.core.config import settings as s
+        ai_status = "healthy" if s.GEMINI_API_KEY else "not configured"
+        health["checks"]["ai_service"] = {"status": ai_status}
+    except Exception:
+        health["checks"]["ai_service"] = {"status": "unhealthy"}
+
+    # Check storage service
+    try:
+        from app.core.config import settings as s
+        storage_status = "healthy" if s.CLOUDINARY_API_KEY else "not configured"
+        health["checks"]["storage"] = {"status": storage_status}
+    except Exception:
+        health["checks"]["storage"] = {"status": "unhealthy"}
+
+    status_code = 200 if health["status"] == "healthy" else 503
+    return health
