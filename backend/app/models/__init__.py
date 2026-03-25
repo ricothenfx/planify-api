@@ -3,6 +3,7 @@ from app.models.project import Project
 from app.models.task import Task
 from app.models.activity import Activity
 from app.models.project_member import ProjectMember
+from app.models.task_comment import TaskComment
 
 
-__all__ = ["User", "Project", "Task", "Activity", "ProjectMember"]
+__all__ = ["User", "Project", "Task", "Activity", "ProjectMember", "TaskComment"]

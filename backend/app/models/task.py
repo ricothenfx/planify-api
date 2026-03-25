@@ -63,3 +63,6 @@ class Task(Base):
 
     project: Mapped["Project"] = relationship("Project", back_populates="tasks")
     assignee: Mapped["User | None"] = relationship("User", back_populates="tasks")
+    comments: Mapped[list["TaskComment"]] = relationship(
+        "TaskComment", back_populates="task", cascade="all, delete-orphan"
+    )

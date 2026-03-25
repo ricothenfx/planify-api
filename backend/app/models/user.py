@@ -33,3 +33,6 @@ class User(Base):
     project_memberships: Mapped[list["ProjectMember"]] = relationship(
         "ProjectMember", back_populates="user"
     )
+    task_comments: Mapped[list["TaskComment"]] = relationship(
+        "TaskComment", back_populates="user"
+    )
