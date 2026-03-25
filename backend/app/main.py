@@ -5,12 +5,17 @@ from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from app.core.config import settings
 from app.core.rate_limit import limiter
+from app.core.logging import setup_logging
+from app.core.middleware import RequestLoggingMiddleware
 from app.core.exceptions import (
     http_exception_handler,
     validation_exception_handler,
     generic_exception_handler,
 )
 from app.api.v1.api import api_router
+
+
+setup_logging()
 
 
 description = """
@@ -44,7 +49,7 @@ ws://localhost:8000/api/v1/ws/projects/{project_id}?token=YOUR_JWT_TOKEN
 tags_metadata = [
     {
         "name": "Auth",
-        "description": "Register and login to get JWT access token",
+        "description": "Register, login to get JWT access token, password reset, and token refresh",
     },
     {
         "name": "Users",
@@ -59,6 +64,18 @@ tags_metadata = [
         "description": "Manage tasks within projects — supports status and priority tracking",
     },
     {
+        "name": "Project Members",
+        "description": "Manage project members and roles"
+    },
+    {
+        "name": "Task Comments",
+        "description": "Comment on tasks"
+    },
+    {
+        "name": "Task Attachments",
+        "description": "Upload files to tasks"
+    },
+    {
         "name": "AI",
         "description": "🤖 AI-powered features — auto-generate tasks using Gemini AI",
     },
@@ -69,6 +86,10 @@ tags_metadata = [
     {
         "name": "WebSocket",
         "description": "📡 Real-time notifications via WebSocket",
+    },
+    {
+        "name": "Health",
+        "description": "Health check endpoints"
     },
 ]
 
@@ -89,6 +110,7 @@ app = FastAPI(
 )
 
 
+app.add_middleware(RequestLoggingMiddleware)
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 app.add_exception_handler(StarletteHTTPException, http_exception_handler)
@@ -99,7 +121,7 @@ app.add_exception_handler(Exception, generic_exception_handler)
 app.include_router(api_router)
 
 
-@app.get("/")
+@app.get("/", tags=["Health"])
 async def root():
     return {
         "success": True,
@@ -111,7 +133,7 @@ async def root():
     }
 
 
-@app.get("/health")
+@app.get("/health", tags=["Health"])
 async def health_check():
     return {
         "success": True,
