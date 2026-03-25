@@ -39,3 +39,6 @@ class User(Base):
     task_attachments: Mapped[list["TaskAttachment"]] = relationship(
         "TaskAttachment", back_populates="user"
     )
+    password_resets: Mapped[list["PasswordReset"]] = relationship(
+        "PasswordReset", back_populates="user", cascade="all, delete-orphan"
+    )

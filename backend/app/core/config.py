@@ -21,9 +21,14 @@ class Settings(BaseSettings):
     GEMINI_MODEL: str = "gemini-2.5-flash"
 
     # CLOUDINARY
-    CLOUDINARY_CLOUD_NAME: str = "REDACTED"
-    CLOUDINARY_API_KEY: str = "REDACTED"
-    CLOUDINARY_API_SECRET: str = "REDACTED"
+    CLOUDINARY_CLOUD_NAME: str = ""
+    CLOUDINARY_API_KEY: str = ""
+    CLOUDINARY_API_SECRET: str = ""
+
+    # EMAIL (resend.com)
+    RESEND_API_KEY: str = ""
+    RESEND_FROM_EMAIL: str = "onboarding@resend.dev"
+    FRONTEND_URL: str = "http://localhost:5173"
 
     class Config:
         env_file = ".env"

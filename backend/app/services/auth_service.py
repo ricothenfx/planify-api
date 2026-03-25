@@ -8,6 +8,7 @@ from app.core.security import (
     create_access_token,
     create_refresh_token,
     decode_access_token,
+    hash_password,
 )
 
 
@@ -70,3 +71,27 @@ class AuthService:
             access_token=access_token,
             refresh_token=refresh_token,
         )
+    
+    async def change_password(
+        self,
+        user_id: str,
+        current_password: str,
+        new_password: str,
+    ) -> None:
+        user = await self.repo.get_by_id(user_id)
+
+        # Check if old password correct
+        if not verify_password(current_password, user.hashed_password):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Current password is incorrect",
+            )
+
+        # New password must be different of old password
+        if current_password == new_password:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="New password must be different from current password",
+            )
+
+        await self.repo.update_password(user_id, hash_password(new_password))
