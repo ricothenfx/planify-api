@@ -1,3 +1,4 @@
+from datetime import datetime
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from app.models.user import User
@@ -35,3 +36,20 @@ class UserRepository:
         if user:
             user.hashed_password = hashed_password
             await self.db.flush()
+    
+    async def increment_failed_attempts(self, user_id: str) -> int:
+        user = await self.get_by_id(user_id)
+        user.failed_login_attempts += 1
+        await self.db.flush()
+        return user.failed_login_attempts
+
+    async def lock_account(self, user_id: str, until: datetime) -> None:
+        user = await self.get_by_id(user_id)
+        user.locked_until = until
+        await self.db.flush()
+
+    async def reset_login_attempts(self, user_id: str) -> None:
+        user = await self.get_by_id(user_id)
+        user.failed_login_attempts = 0
+        user.locked_until = None
+        await self.db.flush()

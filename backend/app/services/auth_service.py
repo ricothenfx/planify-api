@@ -1,3 +1,4 @@
+from datetime import datetime, timezone, timedelta
 from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import HTTPException, status
 from jose import JWTError
@@ -10,20 +11,68 @@ from app.core.security import (
     decode_access_token,
     hash_password,
 )
+from app.core.config import settings
 
 
 class AuthService:
     def __init__(self, db: AsyncSession):
         self.repo = UserRepository(db)
+        self.db = db
     
     async def login(self, data: LoginRequest) -> TokenResponse:
         user = await self.repo.get_by_email(data.email)
 
-        # Check if email registered and password verified
-        if not user or not verify_password(data.password, user.hashed_password):
+        # Check if user registered
+        if not user:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Invalid email or password",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+        
+        # Check if user locked
+        if user.locked_until:
+            locked_until = user.locked_until
+            if locked_until.tzinfo is None:
+                locked_until = locked_until.replace(tzinfo=timezone.utc)
+            
+            now = datetime.now(timezone.utc)
+            if locked_until > now:
+                remaining_seconds = int((locked_until - now).total_seconds())
+                remaining_minutes = remaining_seconds // 60
+                remaining_secs = remaining_seconds % 60
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail=f"Account locked. Try again in {remaining_minutes} minutes {remaining_secs} seconds",
+                )
+            else:
+                # Lock expired — reset automatically
+                await self.repo.reset_login_attempts(user.id)
+                await self.db.commit()
+        
+        # Check the password
+        if not verify_password(data.password, user.hashed_password):
+            attempts = await self.repo.increment_failed_attempts(user.id)
+
+            # Commit first before raise exception
+            await self.db.commit()
+
+            # If user's attempt hit max
+            if attempts >= settings.MAX_LOGIN_ATTEMPTS:
+                lock_until = datetime.now(timezone.utc) + timedelta(
+                    minutes=settings.LOCKOUT_DURATION_MINUTES
+                )
+                await self.repo.lock_account(user.id, lock_until)
+                await self.db.commit()
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail=f"Account locked due to too many failed attempts. Try again in {settings.LOCKOUT_DURATION_MINUTES} minutes",
+                )
+
+            # If user's attempt not hit max yet
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail=f"Invalid email or password. {settings.MAX_LOGIN_ATTEMPTS - attempts} attempts remaining",
                 headers={"WWW-Authenticate": "Bearer"},
             )
         
@@ -33,6 +82,9 @@ class AuthService:
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Account is inactive",
             )
+        
+        # Login success — reset failed attempts
+        await self.repo.reset_login_attempts(user.id)
         
         access_token = create_access_token(data={"sub": str(user.id)})
         refresh_token = create_refresh_token(data={"sub": str(user.id)})
