@@ -30,3 +30,6 @@ class User(Base):
     projects: Mapped[list["Project"]] = relationship("Project", back_populates="owner", cascade="all, delete-orphan")
     tasks: Mapped[list["Task"]] = relationship("Task", back_populates="assignee")
     activities: Mapped[list["Activity"]] = relationship("Activity", back_populates="user")
+    project_memberships: Mapped[list["ProjectMember"]] = relationship(
+        "ProjectMember", back_populates="user"
+    )
