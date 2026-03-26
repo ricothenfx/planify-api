@@ -7,6 +7,9 @@ class Settings(BaseSettings):
     APP_VERSION: str = "1.0.0"
     DEBUG: bool = False
 
+    # CORS
+    ALLOWED_ORIGINS: list[str] = ["http://localhost:5173", "http://localhost:3000"]
+
     # Database
     DATABASE_URL: str = "sqlite+aiosqlite:///./planify.db"
 
