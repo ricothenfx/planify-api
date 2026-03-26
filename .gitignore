@@ -11,3 +11,4 @@ frontend/dist/
 
 # VS Code
 .vscode/
+.env

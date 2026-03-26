@@ -10,6 +10,9 @@ class Settings(BaseSettings):
     # Database
     DATABASE_URL: str = "sqlite+aiosqlite:///./planify.db"
 
+    # Redis
+    REDIS_URL: str = "redis://localhost:6379"
+    
     # JWT
     SECRET_KEY: str = "changethisinproduction"
     ALGORITHM: str = "HS256"
