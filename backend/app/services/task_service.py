@@ -87,10 +87,14 @@ class TaskService:
             if hasattr(value, 'isoformat'):
                 extra[key] = value.isoformat()
             else:
-                extra[key] = value
+                extra[key] = str(value) if hasattr(value, 'value') else value
 
-        if "status" in update_data:
-            extra["old_status"] = str(old_status)
+        # Add old_status if only when status really changed
+        old_status_value = old_status.value if hasattr(old_status, 'value') else str(old_status)
+        new_status_value = update_data["status"].value if hasattr(update_data["status"], 'value') else str(update_data["status"])
+
+        if "status" in update_data and old_status_value != new_status_value:
+            extra["old_status"] = old_status_value
             
         await self.activity.log(
             user_id=owner_id,

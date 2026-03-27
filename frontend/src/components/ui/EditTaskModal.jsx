@@ -44,9 +44,10 @@ export default function EditTaskModal({ isOpen, onClose, task, projectId }) {
         return tasksApi.update(projectId, task.id, payload)
     },
     onSuccess: () => {
-        queryClient.invalidateQueries({ queryKey: ['tasks', projectId] })
-        toast.success('Task updated!')
-        onClose()
+      queryClient.invalidateQueries({ queryKey: ['tasks', projectId] })
+      queryClient.invalidateQueries({ queryKey: ['activities', projectId] })
+      toast.success('Task updated!')
+      onClose()
     },
     onError: (err) => {
         toast.error(err.response?.data?.error?.message || 'Failed to update task')

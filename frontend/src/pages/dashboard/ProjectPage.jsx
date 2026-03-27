@@ -10,6 +10,7 @@ import Input from '../../components/ui/Input'
 import EditProjectModal from '../../components/ui/EditProjectModal'
 import EditTaskModal from '../../components/ui/EditTaskModal'
 import toast from 'react-hot-toast'
+import ActivityLog from '../../components/ui/ActivityLog'
 
 const STATUS_COLUMNS = [
   { key: 'todo', label: 'To Do', color: 'bg-gray-100' },
@@ -46,6 +47,7 @@ export default function ProjectPage() {
     mutationFn: () => tasksApi.create(projectId, taskForm),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tasks', projectId] })
+      queryClient.invalidateQueries({ queryKey: ['activities', projectId] })
       setTaskForm({ title: '', description: '', priority: 'medium' })
       setIsCreateTaskOpen(false)
       toast.success('Task created!')
@@ -59,6 +61,7 @@ export default function ProjectPage() {
     mutationFn: ({ taskId, status }) => tasksApi.update(projectId, taskId, { status }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tasks', projectId] })
+      queryClient.invalidateQueries({ queryKey: ['activities', projectId] })
       toast.success('Task updated!')
     },
     onError: () => toast.error('Failed to update task'),
@@ -68,6 +71,7 @@ export default function ProjectPage() {
     mutationFn: (taskId) => tasksApi.delete(projectId, taskId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tasks', projectId] })
+      queryClient.invalidateQueries({ queryKey: ['activities', projectId] })
       toast.success('Task deleted!')
     },
     onError: () => toast.error('Failed to delete task'),
@@ -118,26 +122,16 @@ export default function ProjectPage() {
           )}
         </div>
         <div className="flex gap-2">
-          <Button
-            variant="secondary"
-            onClick={() => setIsEditProjectOpen(true)}
-          >
+          <Button variant="secondary" onClick={() => setIsEditProjectOpen(true)}>
             ✏️ Edit
           </Button>
-          <Button
-            variant="secondary"
-            onClick={handleGenerateAI}
-            isLoading={isGenerating}
-          >
+          <Button variant="secondary" onClick={handleGenerateAI} isLoading={isGenerating}>
             🤖 AI Tasks
           </Button>
           <Button onClick={() => setIsCreateTaskOpen(true)}>
             + Add Task
           </Button>
-          <Button
-            variant="danger"
-            onClick={() => setIsDeleteConfirmOpen(true)}
-          >
+          <Button variant="danger" onClick={() => setIsDeleteConfirmOpen(true)}>
             🗑️
           </Button>
         </div>
@@ -155,102 +149,113 @@ export default function ProjectPage() {
         ))}
       </div>
 
-      {/* Kanban Board */}
-      {isLoading ? (
-        <div className="text-center py-12 text-gray-400">Loading tasks...</div>
-      ) : (
-        <div className="grid grid-cols-3 gap-6">
-          {STATUS_COLUMNS.map((col) => (
-            <div key={col.key}>
-              <div className={`${col.color} rounded-lg p-3 mb-3`}>
-                <h3 className="font-medium text-gray-700 text-sm">
-                  {col.label}
-                  <span className="ml-2 text-gray-500">
-                    ({getTasksByStatus(col.key).length})
-                  </span>
-                </h3>
-              </div>
-              <div className="space-y-3">
-                {getTasksByStatus(col.key).map((task) => (
-                  <div
-                    key={task.id}
-                    className="bg-white rounded-xl border border-gray-200 p-4 hover:shadow-md transition-shadow"
-                  >
-                    <div className="flex items-start justify-between gap-2 mb-2">
-                      <p className="text-sm font-medium text-gray-900 flex-1">
-                        {task.title}
-                      </p>
-                      <Badge variant={task.priority}>{task.priority}</Badge>
-                    </div>
+      {/* Main Content — Kanban + Activity Log */}
+      <div className="flex gap-6">
+        {/* Kanban Board */}
+        <div className="flex-1">
+          {isLoading ? (
+            <div className="text-center py-12 text-gray-400">Loading tasks...</div>
+          ) : (
+            <div className="grid grid-cols-3 gap-6">
+              {STATUS_COLUMNS.map((col) => (
+                <div key={col.key}>
+                  <div className={`${col.color} rounded-lg p-3 mb-3`}>
+                    <h3 className="font-medium text-gray-700 text-sm">
+                      {col.label}
+                      <span className="ml-2 text-gray-500">
+                        ({getTasksByStatus(col.key).length})
+                      </span>
+                    </h3>
+                  </div>
+                  <div className="space-y-3">
+                    {getTasksByStatus(col.key).map((task) => (
+                      <div
+                        key={task.id}
+                        className="bg-white rounded-xl border border-gray-200 p-4 hover:shadow-md transition-shadow"
+                      >
+                        <div className="flex items-start justify-between gap-2 mb-2">
+                          <p className="text-sm font-medium text-gray-900 flex-1">
+                            {task.title}
+                          </p>
+                          <Badge variant={task.priority}>{task.priority}</Badge>
+                        </div>
 
-                    {task.description && (
-                      <p className="text-xs text-gray-500 mb-3 line-clamp-2">
-                        {task.description}
-                      </p>
-                    )}
+                        {task.description && (
+                          <p className="text-xs text-gray-500 mb-3 line-clamp-2">
+                            {task.description}
+                          </p>
+                        )}
 
-                    {task.due_date && (
-                      <p className="text-xs text-gray-400 mb-3">
-                        📅 {new Date(task.due_date).toLocaleDateString('en-US', {
-                          month: 'short', day: 'numeric', year: 'numeric'
-                        })}
-                      </p>
-                    )}
+                        {task.due_date && (
+                          <p className="text-xs text-gray-400 mb-3">
+                            📅 {new Date(task.due_date).toLocaleDateString('en-US', {
+                              month: 'short', day: 'numeric', year: 'numeric'
+                            })}
+                          </p>
+                        )}
 
-                    <div className="flex gap-1 flex-wrap">
-                      {STATUS_COLUMNS.filter((s) => s.key !== task.status).map((s) => (
-                        <button
-                          key={s.key}
-                          onClick={() => updateTaskStatus.mutate({ taskId: task.id, status: s.key })}
-                          className="text-xs px-2 py-1 rounded bg-gray-100 text-gray-600 hover:bg-indigo-100 hover:text-indigo-600 transition-colors"
-                        >
-                          {s.label}
-                        </button>
-                      ))}
-                      <div className="ml-auto flex gap-1">
-                        <button
-                          onClick={() => { setSelectedTask(task); setIsEditTaskOpen(true) }}
-                          className="text-xs px-2 py-1 rounded bg-gray-100 text-gray-600 hover:bg-indigo-100 hover:text-indigo-600 transition-colors"
-                        >
-                          ✏️
-                        </button>
-                        <button
-                          onClick={() => deleteTask.mutate(task.id)}
-                          className="text-xs px-2 py-1 rounded bg-gray-100 text-red-500 hover:bg-red-50 transition-colors"
-                        >
-                          🗑️
-                        </button>
+                        <div className="flex gap-1 flex-wrap">
+                          {STATUS_COLUMNS.filter((s) => s.key !== task.status).map((s) => (
+                            <button
+                              key={s.key}
+                              onClick={() => updateTaskStatus.mutate({ taskId: task.id, status: s.key })}
+                              className="text-xs px-2 py-1 rounded bg-gray-100 text-gray-600 hover:bg-indigo-100 hover:text-indigo-600 transition-colors"
+                            >
+                              {s.label}
+                            </button>
+                          ))}
+                          <div className="ml-auto flex gap-1">
+                            <button
+                              onClick={() => { setSelectedTask(task); setIsEditTaskOpen(true) }}
+                              className="text-xs px-2 py-1 rounded bg-gray-100 text-gray-600 hover:bg-indigo-100 hover:text-indigo-600 transition-colors"
+                            >
+                              ✏️
+                            </button>
+                            <button
+                              onClick={() => deleteTask.mutate(task.id)}
+                              className="text-xs px-2 py-1 rounded bg-gray-100 text-red-500 hover:bg-red-50 transition-colors"
+                            >
+                              🗑️
+                            </button>
+                          </div>
+                        </div>
                       </div>
-                    </div>
-                  </div>
-                ))}
+                    ))}
 
-                {getTasksByStatus(col.key).length === 0 && (
-                  <div className="text-center py-8 text-gray-400 text-sm border-2 border-dashed border-gray-200 rounded-xl">
-                    No tasks
+                    {getTasksByStatus(col.key).length === 0 && (
+                      <div className="text-center py-8 text-gray-400 text-sm border-2 border-dashed border-gray-200 rounded-xl">
+                        No tasks
+                      </div>
+                    )}
                   </div>
-                )}
-              </div>
+                </div>
+              ))}
             </div>
-          ))}
+          )}
         </div>
-      )}
 
-      {/* Edit Project Modal */}
+        {/* Activity Log Sidebar */}
+        <div className="w-72 flex-shrink-0">
+          <div className="bg-white rounded-xl border border-gray-200 p-4 sticky top-8">
+            <h3 className="font-semibold text-gray-900 mb-4">📋 Activity Log</h3>
+            <ActivityLog projectId={projectId} />
+          </div>
+        </div>
+      </div>
+
+      {/* Modals */}
       <EditProjectModal
         isOpen={isEditProjectOpen}
         onClose={() => setIsEditProjectOpen(false)}
         project={project}
       />
-
-      {/* Delete Project Confirm */}
       <Modal
         isOpen={isDeleteConfirmOpen}
         onClose={() => setIsDeleteConfirmOpen(false)}
         title="Delete Project"
       >
         <p className="text-gray-600 mb-6">
-          Are you sure you want to delete <strong>{project.name}</strong>? 
+          Are you sure you want to delete <strong>{project.name}</strong>?
           This will also delete all tasks. This action cannot be undone.
         </p>
         <div className="flex gap-3 justify-end">
@@ -266,8 +271,6 @@ export default function ProjectPage() {
           </Button>
         </div>
       </Modal>
-
-      {/* Create Task Modal */}
       <Modal
         isOpen={isCreateTaskOpen}
         onClose={() => setIsCreateTaskOpen(false)}
@@ -318,7 +321,6 @@ export default function ProjectPage() {
           </div>
         </form>
       </Modal>
-      
       <EditTaskModal
         isOpen={isEditTaskOpen}
         onClose={() => { setIsEditTaskOpen(false); setSelectedTask(null) }}
