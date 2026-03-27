@@ -1,4 +1,5 @@
 import { create } from 'zustand'
+import toast from 'react-hot-toast'
 import api from '../lib/axios'
 
 const useAuthStore = create((set) => ({
@@ -8,27 +9,24 @@ const useAuthStore = create((set) => ({
   error: null,
 
   login: async (email, password) => {
-    set({ isLoading: true, error: null })
+    set({ isLoading: true })  // ← hapus error: null di sini
     try {
       const response = await api.post('/auth/login', { email, password })
       const { access_token, refresh_token } = response.data
-
       localStorage.setItem('access_token', access_token)
       localStorage.setItem('refresh_token', refresh_token)
-
       const userResponse = await api.get('/users/me')
       set({
         user: userResponse.data,
         isAuthenticated: true,
         isLoading: false,
+        error: null,  // ← reset hanya saat sukses
       })
-
+      toast.success('Welcome back!')
       return true
     } catch (error) {
-      set({
-        error: error.response?.data?.error?.message || 'Login failed',
-        isLoading: false,
-      })
+      const message = error.response?.data?.error?.message || 'Login failed'
+      set({ error: message, isLoading: false })
       return false
     }
   },
@@ -37,6 +35,7 @@ const useAuthStore = create((set) => ({
     localStorage.removeItem('access_token')
     localStorage.removeItem('refresh_token')
     set({ user: null, isAuthenticated: false })
+    toast.success('Signed out successfully')
   },
 
   fetchUser: async () => {

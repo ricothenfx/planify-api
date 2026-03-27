@@ -80,9 +80,18 @@ class TaskService:
         old_status = task.status
         update_data = data.model_dump(exclude_none=True)
         task = await self.task_repo.update(task, update_data)
-        extra = update_data.copy()
+        
+        # Serialize extra_data: safe for JSON
+        extra = {}
+        for key, value in update_data.items():
+            if hasattr(value, 'isoformat'):
+                extra[key] = value.isoformat()
+            else:
+                extra[key] = value
+
         if "status" in update_data:
-            extra["old_status"] = old_status
+            extra["old_status"] = str(old_status)
+            
         await self.activity.log(
             user_id=owner_id,
             project_id=project_id,

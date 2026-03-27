@@ -8,25 +8,21 @@ const api = axios.create({
 })
 
 // Request interceptor — tambah token otomatis
-api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('access_token')
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`
-  }
-  return config
-})
-
-// Response interceptor — handle token expired
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
     const original = error.config
 
-    if (error.response?.status === 401 && !original._retry) {
+    // Jangan retry kalau ini auth endpoint
+    const isAuthEndpoint = original.url?.includes('/auth/')
+    
+    if (error.response?.status === 401 && !original._retry && !isAuthEndpoint) {
       original._retry = true
 
       try {
         const refreshToken = localStorage.getItem('refresh_token')
+        if (!refreshToken) throw new Error('No refresh token')
+        
         const response = await axios.post(
           'http://localhost:8000/api/v1/auth/refresh',
           { refresh_token: refreshToken }

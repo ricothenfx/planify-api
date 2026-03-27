@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
+import toast from 'react-hot-toast'
 import { projectsApi } from '../../api/projects'
 import Modal from './Modal'
 import Input from './Input'
@@ -14,7 +15,11 @@ export default function CreateProjectModal({ isOpen, onClose }) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['projects'] })
       setForm({ name: '', description: '' })
+      toast.success('Project created!')
       onClose()
+    },
+    onError: (err) => {
+      toast.error(err.response?.data?.error?.message || 'Failed to create project')
     },
   })
 
@@ -25,11 +30,6 @@ export default function CreateProjectModal({ isOpen, onClose }) {
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Create New Project">
-      {error && (
-        <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-600">
-          {error.response?.data?.error?.message || 'Failed to create project'}
-        </div>
-      )}
       <form onSubmit={handleSubmit} className="space-y-4">
         <Input
           label="Project Name"
