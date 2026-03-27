@@ -89,6 +89,9 @@ class TaskService:
             else:
                 extra[key] = str(value) if hasattr(value, 'value') else value
 
+        # Task tittle
+        extra['title'] = task.title
+
         # Add old_status if only when status really changed
         old_status_value = old_status.value if hasattr(old_status, 'value') else str(old_status)
         new_status_value = update_data["status"].value if hasattr(update_data["status"], 'value') else str(update_data["status"])
