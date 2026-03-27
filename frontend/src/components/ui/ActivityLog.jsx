@@ -58,6 +58,7 @@ const formatAction = (activity) => {
     case 'attachment_uploaded': return `Uploaded file "${name}"`
     case 'project_member_member_added': return `Added member to project`
     case 'project_member_member_removed': return `Removed member from project`
+    case 'comment_created': return `Commented on task "${extra_data?.task_title || ''}"`
     default: return `${action} ${entity_type}`
   }
 }

@@ -22,7 +22,7 @@ class TaskCommentService:
         data: CommentCreate,
         user_id: str,
     ) -> CommentResponse:
-        await self._verify_task(project_id, task_id)
+        task = await self._verify_task(project_id, task_id)
         comment = await self.comment_repo.create(
             task_id=task_id,
             user_id=user_id,
@@ -34,7 +34,10 @@ class TaskCommentService:
             entity_type="comment",
             entity_id=comment.id,
             action="created",
-            extra_data={"task_id": task_id},
+            extra_data={
+                "task_id": task_id,
+                "task_title": task.title,
+            },
         )
         await ws_manager.broadcast_to_project(project_id, {
             "type": "comment_created",

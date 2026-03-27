@@ -11,6 +11,7 @@ import EditProjectModal from '../../components/ui/EditProjectModal'
 import EditTaskModal from '../../components/ui/EditTaskModal'
 import toast from 'react-hot-toast'
 import ActivityLog from '../../components/ui/ActivityLog'
+import TaskDetailModal from '../../components/ui/TaskDetailModal'
 
 const STATUS_COLUMNS = [
   { key: 'todo', label: 'To Do', color: 'bg-gray-100' },
@@ -28,6 +29,8 @@ export default function ProjectPage() {
   const [isEditTaskOpen, setIsEditTaskOpen] = useState(false)
   const [selectedTask, setSelectedTask] = useState(null)
   const [taskForm, setTaskForm] = useState({ title: '', description: '', priority: 'medium' })
+  const [isDetailOpen, setIsDetailOpen] = useState(false)
+  const [detailTask, setDetailTask] = useState(null)
   const [isGenerating, setIsGenerating] = useState(false)
 
   const { data: projectData } = useQuery({
@@ -171,7 +174,8 @@ export default function ProjectPage() {
                     {getTasksByStatus(col.key).map((task) => (
                       <div
                         key={task.id}
-                        className="bg-white rounded-xl border border-gray-200 p-4 hover:shadow-md transition-shadow"
+                        className="bg-white rounded-xl border border-gray-200 p-4 hover:shadow-md transition-shadow cursor-pointer"
+                        onClick={() => { setDetailTask(task); setIsDetailOpen(true) }}
                       >
                         <div className="flex items-start justify-between gap-2 mb-2">
                           <p className="text-sm font-medium text-gray-900 flex-1">
@@ -198,7 +202,10 @@ export default function ProjectPage() {
                           {STATUS_COLUMNS.filter((s) => s.key !== task.status).map((s) => (
                             <button
                               key={s.key}
-                              onClick={() => updateTaskStatus.mutate({ taskId: task.id, status: s.key })}
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                updateTaskStatus.mutate({ taskId: task.id, status: s.key })
+                              }}
                               className="text-xs px-2 py-1 rounded bg-gray-100 text-gray-600 hover:bg-indigo-100 hover:text-indigo-600 transition-colors"
                             >
                               {s.label}
@@ -206,13 +213,20 @@ export default function ProjectPage() {
                           ))}
                           <div className="ml-auto flex gap-1">
                             <button
-                              onClick={() => { setSelectedTask(task); setIsEditTaskOpen(true) }}
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                setSelectedTask(task)
+                                setIsEditTaskOpen(true)
+                              }}
                               className="text-xs px-2 py-1 rounded bg-gray-100 text-gray-600 hover:bg-indigo-100 hover:text-indigo-600 transition-colors"
                             >
                               ✏️
                             </button>
                             <button
-                              onClick={() => deleteTask.mutate(task.id)}
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                deleteTask.mutate(task.id)
+                              }}
                               className="text-xs px-2 py-1 rounded bg-gray-100 text-red-500 hover:bg-red-50 transition-colors"
                             >
                               🗑️
@@ -325,6 +339,12 @@ export default function ProjectPage() {
         isOpen={isEditTaskOpen}
         onClose={() => { setIsEditTaskOpen(false); setSelectedTask(null) }}
         task={selectedTask}
+        projectId={projectId}
+      />
+      <TaskDetailModal
+        isOpen={isDetailOpen}
+        onClose={() => { setIsDetailOpen(false); setDetailTask(null) }}
+        task={detailTask}
         projectId={projectId}
       />
     </div>
