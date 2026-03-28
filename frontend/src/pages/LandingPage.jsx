@@ -1,5 +1,7 @@
 import { Link } from 'react-router-dom'
 
+const API_BASE = import.meta.env.VITE_API_URL?.replace('/api/v1', '') || 'http://localhost:8000'
+
 const features = [
   {
     icon: '🔐',
@@ -88,7 +90,7 @@ export default function LandingPage() {
           <h1 className="text-xl font-bold text-indigo-600">🗂️ Planify</h1>
           <div className="flex items-center gap-4">
             
-            <a href="http://localhost:8000/docs"
+            <a href={`${API_BASE}/docs`}
               target="_blank"
               rel="noreferrer"
               className="text-sm text-gray-600 hover:text-gray-900 transition-colors"
@@ -133,7 +135,7 @@ export default function LandingPage() {
             Try the app
           </Link>
           
-          <a href="http://localhost:8000/docs"
+          <a href={`${API_BASE}/docs`}
             target="_blank"
             rel="noreferrer"
             className="text-gray-600 px-8 py-3 rounded-xl font-medium border border-gray-200 hover:border-indigo-300 transition-colors"
@@ -285,7 +287,7 @@ export default function LandingPage() {
               Try the app
             </Link>
             
-            <a href="http://localhost:8000/docs"
+            <a href={`${API_BASE}/docs`}
               target="_blank"
               rel="noreferrer"
               className="border border-indigo-400 text-white px-8 py-3 rounded-xl font-medium hover:bg-indigo-700 transition-colors"
@@ -307,7 +309,7 @@ export default function LandingPage() {
           </div>
           <div className="flex gap-6">
             
-            <a href="http://localhost:8000/docs"
+            <a href={`${API_BASE}/docs`}
               target="_blank"
               rel="noreferrer"
               className="text-sm text-indigo-600 hover:underline"
@@ -315,7 +317,7 @@ export default function LandingPage() {
               Swagger UI
             </a>
             
-            <a href="http://localhost:8000/redoc"
+            <a href={`${API_BASE}/redoc`}
               target="_blank"
               rel="noreferrer"
               className="text-sm text-indigo-600 hover:underline"
@@ -323,7 +325,7 @@ export default function LandingPage() {
               ReDoc
             </a>
             
-            <a href="http://localhost:8000/health"
+            <a href={`${API_BASE}/health`}
               target="_blank"
               rel="noreferrer"
               className="text-sm text-indigo-600 hover:underline"
