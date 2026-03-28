@@ -8,7 +8,11 @@ class Settings(BaseSettings):
     DEBUG: bool = False
 
     # CORS
-    ALLOWED_ORIGINS: list[str] = ["http://localhost:5173", "http://localhost:3000"]
+    ALLOWED_ORIGINS: list[str] = [
+        "http://localhost:5173",
+        "http://localhost:3000",
+        "https://planify-api-iota.vercel.app",
+    ]
 
     # Database
     DATABASE_URL: str = "sqlite+aiosqlite:///./planify.db"
