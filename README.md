@@ -247,7 +247,7 @@ WS     /api/v1/ws/projects/:id?token=JWT       # Real-time events
 
 ## 👤 Author
 
-Built by Rico — Backend Developer
+Built by **Rico** — Backend Developer
 
 [![LinkedIn](https://img.shields.io/badge/LinkedIn-Connect-blue?style=flat-square&logo=linkedin)](https://linkedin.com/in/rico-then)
 [![GitHub](https://img.shields.io/badge/GitHub-Follow-black?style=flat-square&logo=github)](https://github.com/ricothenfx)
