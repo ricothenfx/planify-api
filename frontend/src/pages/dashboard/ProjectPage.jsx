@@ -62,22 +62,34 @@ export default function ProjectPage() {
 
   const updateTaskStatus = useMutation({
     mutationFn: ({ taskId, status }) => tasksApi.update(projectId, taskId, { status }),
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['tasks', projectId] })
       queryClient.invalidateQueries({ queryKey: ['activities', projectId] })
       toast.success('Task updated!')
+
+      // Tampilkan AI suggestions kalau ada
+      const suggestions = data?.data?.suggestions
+      if (suggestions && suggestions.length > 0) {
+        setTimeout(() => {
+          suggestions.forEach((suggestion, index) => {
+            setTimeout(() => {
+              toast(suggestion, {
+                icon: '🤖',
+                duration: 6000,
+                style: {
+                  borderRadius: '10px',
+                  background: '#EEF2FF',
+                  color: '#3730A3',
+                  fontSize: '13px',
+                  maxWidth: '400px',
+                },
+              })
+            }, index * 800)
+          })
+        }, 500)
+      }
     },
     onError: () => toast.error('Failed to update task'),
-  })
-
-  const deleteTask = useMutation({
-    mutationFn: (taskId) => tasksApi.delete(projectId, taskId),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['tasks', projectId] })
-      queryClient.invalidateQueries({ queryKey: ['activities', projectId] })
-      toast.success('Task deleted!')
-    },
-    onError: () => toast.error('Failed to delete task'),
   })
 
   const deleteProject = useMutation({
