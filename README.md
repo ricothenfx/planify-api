@@ -14,10 +14,10 @@
 
 | | URL |
 |--|--|
-| 🖥️ **Web App** | `http://localhost:5173` |
-| 📚 **API Docs (Swagger)** | `http://localhost:8000/docs` |
-| 📖 **API Docs (ReDoc)** | `http://localhost:8000/redoc` |
-| ❤️ **Health Check** | `http://localhost:8000/health` |
+| 🖥️ **Web App** | `https://planify-api-iota.vercel.app` |
+| 📚 **API Docs (Swagger)** | `https://collective-mahala-ricothenfx-0fa7db9e.koyeb.app/docs` |
+| 📖 **API Docs (ReDoc)** | `https://collective-mahala-ricothenfx-0fa7db9e.koyeb.app/redoc` |
+| ❤️ **Health Check** | `https://collective-mahala-ricothenfx-0fa7db9e.koyeb.app/health` |
 
 ---
 
