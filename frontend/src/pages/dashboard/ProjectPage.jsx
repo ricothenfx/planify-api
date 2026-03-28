@@ -12,6 +12,7 @@ import EditTaskModal from '../../components/ui/EditTaskModal'
 import toast from 'react-hot-toast'
 import ActivityLog from '../../components/ui/ActivityLog'
 import TaskDetailModal from '../../components/ui/TaskDetailModal'
+import ProjectMembersModal from '../../components/ui/ProjectMembersModal'
 
 const STATUS_COLUMNS = [
   { key: 'todo', label: 'To Do', color: 'bg-gray-100' },
@@ -31,6 +32,7 @@ export default function ProjectPage() {
   const [taskForm, setTaskForm] = useState({ title: '', description: '', priority: 'medium' })
   const [isDetailOpen, setIsDetailOpen] = useState(false)
   const [detailTask, setDetailTask] = useState(null)
+  const [isMembersOpen, setIsMembersOpen] = useState(false)
   const [isGenerating, setIsGenerating] = useState(false)
 
   const { data: projectData } = useQuery({
@@ -137,6 +139,9 @@ export default function ProjectPage() {
           )}
         </div>
         <div className="flex gap-2">
+          <Button variant="secondary" onClick={() => setIsMembersOpen(true)}>
+            👥 Members
+          </Button>
           <Button variant="secondary" onClick={() => setIsEditProjectOpen(true)}>
             ✏️ Edit
           </Button>
@@ -357,6 +362,11 @@ export default function ProjectPage() {
         isOpen={isDetailOpen}
         onClose={() => { setIsDetailOpen(false); setDetailTask(null) }}
         task={detailTask}
+        projectId={projectId}
+      />
+      <ProjectMembersModal
+        isOpen={isMembersOpen}
+        onClose={() => setIsMembersOpen(false)}
         projectId={projectId}
       />
     </div>
